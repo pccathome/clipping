@@ -217,9 +217,7 @@ onMounted(() => {
             <template v-slot:first>&nbsp;</template>
             <template v-slot:second> Clipping </template>
             <template v-slot:github>
-                <a href="https://github.com/pccathome/happy-balloon" target="_blank" class="underline-offset-2"
-                    >GitHub</a
-                >
+                <a href="https://github.com/pccathome/clipping" target="_blank" class="underline-offset-2">GitHub</a>
             </template></FooterInfo
         ></PageWrap
     >
