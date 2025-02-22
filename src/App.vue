@@ -6,7 +6,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import PageWrap from './components/PageWrap.vue'
 import Header from './components/Header.vue'
 import FooterInfo from './components/FooterInfo.vue'
-import loadingIco from './components/LoadingIco.vue'
+import LoadingIco from './components/LoadingIco.vue'
 
 function init() {
     createObjects()
@@ -36,6 +36,18 @@ const handleResize = () => {
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
+
+// Loading Manager
+const loading = ref(true)
+const loadingManager = new THREE.LoadingManager(
+    () => {
+        loading.value = false
+    },
+    (file, loaded, total) => {
+        const progress = loaded / total
+        console.log(`Loading: ${progress * 100}%`)
+    }
+)
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true })
@@ -114,7 +126,8 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
 //createObjects
 function createObjects() {
     // hdr
-    const hdrEquirect = new RGBELoader().load('/photo_studio_01_1k.hdr', function (texture) {
+    // const hdrEquirect = new RGBELoader(loadingManager)
+    const hdrEquirect = new RGBELoader(loadingManager).load('./photo_studio_01_1k.hdr', function (texture) {
         texture.mapping = THREE.EquirectangularReflectionMapping
         texture.encoding = THREE.sRGBEncoding
         texture.colorSpace = THREE.SRGBColorSpace
@@ -231,6 +244,9 @@ onMounted(() => {
 <template>
     <PageWrap>
         <Header />
+        <div v-if="loading" class="absolute z-10 h-dvh inset-0 flex items-center justify-center">
+            <LoadingIco />
+        </div>
         <div class="outline-none w-full h-dvh" ref="webgl"></div>
         <FooterInfo>
             <template v-slot:first>&nbsp;</template>
