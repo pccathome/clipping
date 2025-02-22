@@ -37,19 +37,6 @@ const handleResize = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
 
-// Loading Manager
-const loading = ref(true)
-const loadingManager = new THREE.LoadingManager(
-    () => {
-        loading.value = false
-        isPlaying.value = false
-    },
-    (file, loaded, total) => {
-        const progress = loaded / total
-        console.log(`Loading audio: ${progress * 100}%`)
-    }
-)
-
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true })
 renderer.setSize(sizes.width, sizes.height)
@@ -127,7 +114,7 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
 //createObjects
 function createObjects() {
     // hdr
-    const hdrEquirect = new RGBELoader(loadingManager).load('/photo_studio_01_1k.hdr', function (texture) {
+    const hdrEquirect = new RGBELoader().load('/photo_studio_01_1k.hdr', function (texture) {
         texture.mapping = THREE.EquirectangularReflectionMapping
         texture.encoding = THREE.sRGBEncoding
         texture.colorSpace = THREE.SRGBColorSpace
@@ -245,9 +232,6 @@ onMounted(() => {
     <PageWrap>
         <Header />
         <div class="outline-none w-full h-dvh" ref="webgl"></div>
-        <div v-if="loading" class="absolute inset-0 h-dvh flex items-center justify-center mt-36 sm:mt-0 z-10">
-            <loadingIco />
-        </div>
         <FooterInfo>
             <template v-slot:first>&nbsp;</template>
             <template v-slot:second> Clipping </template>
