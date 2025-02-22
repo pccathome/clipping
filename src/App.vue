@@ -2,9 +2,11 @@
 import { onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import PageWrap from './components/PageWrap.vue'
 import Header from './components/Header.vue'
 import FooterInfo from './components/FooterInfo.vue'
+import loadingIco from './components/loadingIco.vue'
 
 function init() {
     createObjects()
@@ -35,17 +37,28 @@ const handleResize = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
 
+// Loading Manager
+const loading = ref(true)
+const loadingManager = new THREE.LoadingManager(
+    () => {
+        loading.value = false
+        isPlaying.value = false
+    },
+    (file, loaded, total) => {
+        const progress = loaded / total
+        console.log(`Loading audio: ${progress * 100}%`)
+    }
+)
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true })
 renderer.setSize(sizes.width, sizes.height)
-renderer.setClearColor(0x263238)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.localClippingEnabled = true
 
 // Camera
 const camera = new THREE.PerspectiveCamera(36, sizes.width / sizes.height, 0.1, 1000)
-camera.position.set(4, 3, 7.5)
-
+camera.position.set(4, 2, 7.5)
 scene.add(camera)
 
 // Controls
@@ -58,14 +71,14 @@ function controls() {
 
 // Lights
 function light() {
-    scene.add(new THREE.AmbientLight(0xffffff, 2))
+    scene.add(new THREE.AmbientLight(0xffffff, 3))
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 4)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 6)
     dirLight.position.set(5, 10, 7.5)
     scene.add(dirLight)
 }
 
-let planes, planeObjects, planeHelpers, object
+let planes, planeObjects, object, BoxObject
 planes = [
     new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1),
     new THREE.Plane(new THREE.Vector3(0, -1, 0), 1),
@@ -82,7 +95,6 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
     baseMat.depthTest = false
     baseMat.colorWrite = false
     baseMat.stencilWrite = true
-
     baseMat.stencilFunc = THREE.AlwaysStencilFunc
 
     // back faces
@@ -107,7 +119,6 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
 
     const mesh1 = new THREE.Mesh(geometry, mat1)
     mesh1.renderOrder = renderOrder
-
     group.add(mesh1)
 
     return group
@@ -115,23 +126,45 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
 
 //createObjects
 function createObjects() {
-    const boxG = new THREE.BoxGeometry()
-    const BoxObject = new THREE.Mesh(boxG, new THREE.MeshBasicMaterial())
-    BoxObject.scale.set(2, 2, 2)
-    const box = new THREE.BoxHelper(BoxObject)
-    box.material.color.setHex(0x797979)
-    box.material.blending = THREE.AdditiveBlending
-    box.material.transparent = true
-    scene.add(box)
+    // hdr
+    const hdrEquirect = new RGBELoader(loadingManager).load('/photo_studio_01_1k.hdr', function (texture) {
+        texture.mapping = THREE.EquirectangularReflectionMapping
+        texture.encoding = THREE.sRGBEncoding
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = 64
+        texture.magFilter = THREE.LinearFilter
+        texture.minFilter = THREE.LinearMipMapLinearFilter
+        texture.needsUpdate = true
+    })
 
+    // box
+    const boxT = new THREE.BoxGeometry(1.99, 1.99, 1.99)
+    const materialT = new THREE.MeshPhysicalMaterial({
+        color: 0x080808,
+        metalness: 1,
+        roughness: 0,
+        transmission: 0.6,
+        specularIntensity: 1,
+        specularColor: new THREE.Color(0x000000),
+        envMap: hdrEquirect,
+        envMapIntensity: 1,
+        ior: 5,
+        opacity: 0.4,
+        side: THREE.DoubleSide,
+        transparent: true
+    })
+    BoxObject = new THREE.Mesh(boxT, materialT)
+    scene.add(BoxObject)
+
+    // torus knot
     const geometry = new THREE.TorusKnotGeometry(1, 0.3, 220, 60)
     object = new THREE.Group()
     scene.add(object)
 
     const material = new THREE.MeshPhysicalMaterial({
         color: 0x000000,
-        metalness: 0.1,
-        roughness: 0.75,
+        metalness: 0.2,
+        roughness: 0.6,
         clippingPlanes: planes,
         shadowSide: THREE.DoubleSide
     })
@@ -152,7 +185,7 @@ function createObjects() {
 
         // plane is clipped by the other clipping planes
         const planeMat = new THREE.MeshStandardMaterial({
-            color: 0x770000,
+            color: 0x960600,
             metalness: 0.1,
             roughness: 0.75,
             clippingPlanes: planes.filter((p) => p !== plane),
@@ -211,8 +244,10 @@ onMounted(() => {
 <template>
     <PageWrap>
         <Header />
-
         <div class="outline-none w-full h-dvh" ref="webgl"></div>
+        <div v-if="loading" class="absolute inset-0 h-dvh flex items-center justify-center mt-36 sm:mt-0 z-10">
+            <loadingIco />
+        </div>
         <FooterInfo>
             <template v-slot:first>&nbsp;</template>
             <template v-slot:second> Clipping </template>
