@@ -6,7 +6,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import PageWrap from './components/PageWrap.vue'
 import Header from './components/Header.vue'
 import FooterInfo from './components/FooterInfo.vue'
-import loadingIco from './components/loadingIco.vue'
+import loadingIco from './components/LoadingIco.vue'
 
 function init() {
     createObjects()
