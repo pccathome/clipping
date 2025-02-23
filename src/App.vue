@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
@@ -20,7 +21,7 @@ const webgl = ref(null)
 
 // Scene
 const scene = new THREE.Scene()
-scene.background = new THREE.Color('#000000')
+scene.background = new THREE.Color('#101010')
 
 // Resize
 const sizes = {
@@ -60,19 +61,28 @@ const camera = new THREE.PerspectiveCamera(36, sizes.width / sizes.height, 0.1, 
 camera.position.set(4, 2, 7.5)
 scene.add(camera)
 
+// Mobile
+const isMobile = useMediaQuery('(max-width: 768px)')
+if (isMobile.value) {
+    camera.position.set(4, 2, 9.5)
+} else {
+    camera.position.set(4, 2, 7.5)
+}
+
 // Controls
 let control
 function controls() {
     control = new OrbitControls(camera, renderer.domElement)
     control.enableDamping = true
     control.dampingFactor = 0.05
+    control.enableZoom = false
 }
 
 // Lights
 function light() {
     scene.add(new THREE.AmbientLight(0xffffff, 3))
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 6)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2)
     dirLight.position.set(5, 10, 7.5)
     scene.add(dirLight)
 }
@@ -126,7 +136,6 @@ function createPlaneStencilGroup(geometry, plane, renderOrder) {
 //createObjects
 function createObjects() {
     // hdr
-    // const hdrEquirect = new RGBELoader(loadingManager)
     const hdrEquirect = new RGBELoader(loadingManager).load('./photo_studio_01_1k.hdr', function (texture) {
         texture.mapping = THREE.EquirectangularReflectionMapping
         texture.encoding = THREE.sRGBEncoding
@@ -138,23 +147,25 @@ function createObjects() {
     })
 
     // box
-    const boxT = new THREE.BoxGeometry(1.99, 1.99, 1.99)
+    const boxT = new THREE.BoxGeometry(2, 2, 2)
     const materialT = new THREE.MeshPhysicalMaterial({
-        color: 0x080808,
-        metalness: 1,
+        color: 0x000000,
+        metalness: 0,
         roughness: 0,
-        transmission: 0.6,
-        specularIntensity: 1,
-        specularColor: new THREE.Color(0x000000),
         envMap: hdrEquirect,
-        envMapIntensity: 1,
-        ior: 5,
-        opacity: 0.4,
+        envMapIntensity: 5,
+        opacity: 0.08,
         side: THREE.DoubleSide,
         transparent: true
     })
     BoxObject = new THREE.Mesh(boxT, materialT)
     scene.add(BoxObject)
+
+    const helper = new THREE.BoxHelper(new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2)))
+    helper.material.color.setHex(0x202020)
+    helper.material.blending = THREE.AdditiveBlending
+    helper.material.transparent = true
+    scene.add(helper)
 
     // torus knot
     const geometry = new THREE.TorusKnotGeometry(1, 0.3, 220, 60)
