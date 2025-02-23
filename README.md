@@ -1,6 +1,6 @@
 [![Screenshot](./public/screenshot.webp)]()
 
-# Happy Balloon
+# Clipping
 
 -   VUE + Three.js
 -   Clipping.
